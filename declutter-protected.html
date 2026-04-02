@@ -124,7 +124,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .storage-cell.type-fixture:hover{border-color:var(--paper-dark);box-shadow:none}
 .cell-status-dot{position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .cell-status-dot.done{background:var(--green)}.cell-status-dot.inprogress{background:var(--amber)}.cell-status-dot.todo{background:#ccc}
-.cell-content-text{font-size:11px;font-weight:500;line-height:1.35;word-break:break-word;padding-left:14px}
+.cell-content-text{font-size:11px;line-height:1.4;word-break:break-word;padding-left:14px}
+.cell-block{margin-bottom:5px}.cell-block:last-child{margin-bottom:0}
+.cell-cat{font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em;color:var(--ink)}
+.cell-items{font-weight:400;font-size:10.5px;color:var(--ink-soft);line-height:1.35}
 .cell-container-tag{font-size:9.5px;color:var(--ink-soft);margin-top:4px;font-weight:400;padding-left:14px}
 .cell-drag-handle{position:absolute;top:50%;left:3px;transform:translateY(-50%);font-size:11px;color:rgba(0,0,0,.18);cursor:grab;line-height:1;padding:2px;border-radius:3px;transition:all .15s;user-select:none;opacity:0}
 .storage-cell:hover .cell-drag-handle{opacity:1}
@@ -1032,7 +1035,19 @@ function buildSpaceCard(sp){
         dh.title='Drag to reorder';
         el.appendChild(dh);
         const contentDiv=document.createElement('div');
-        contentDiv.innerHTML=`<div class="cell-status-dot ${cell.status}"></div><div class="cell-content-text">${cell.content.replace(/\n/g,'<br>')}</div>${cell.container?`<div class="cell-container-tag">📦 ${cell.container}</div>`:''}`;
+        // Parse content into category+items blocks
+        const cellLines=cell.content.split('\n').map(l=>l.trim()).filter(Boolean);
+        const cellBlocks=[];
+        let curBlock=null;
+        cellLines.forEach(line=>{
+          // A category line: all uppercase (allowing spaces, dashes, slashes, numbers)
+          const isCat=line===line.toUpperCase()&&/[A-Z]/.test(line);
+          if(isCat){curBlock={cat:line,items:[]};cellBlocks.push(curBlock);}
+          else if(curBlock){curBlock.items.push(line);}
+          else{cellBlocks.push({cat:'',items:[line]});}
+        });
+        const blocksHtml=cellBlocks.map(b=>`<div class="cell-block"><div class="cell-cat">${b.cat}</div>${b.items.length?`<div class="cell-items">${b.items.join(', ')}</div>`:''}</div>`).join('');
+        contentDiv.innerHTML=`<div class="cell-status-dot ${cell.status}"></div><div class="cell-content-text">${blocksHtml}</div>${cell.container?`<div class="cell-container-tag">📦 ${cell.container}</div>`:''}`;
         el.appendChild(contentDiv);
         // click to edit (but not when dragging)
         el.addEventListener('click',ev=>{if(!el.classList.contains('cell-dragging'))openEditCell(activeRoom.id,sp.id,cell.id);});
@@ -1199,9 +1214,17 @@ function openEditCell(roomId,spId,cellId){
   }else{
     linkBox.innerHTML=storeItems.map(it=>{
       const linked=it.assignedCellIds&&it.assignedCellIds.some(r=>r.cellId===cellId);
-      return`<label class="item-link-check">
-        <input type="checkbox" value="${it.id}" ${linked?'checked':''} onchange="syncCellContentFromItems()">
-        <span style="flex:1">${it.category}${it.items?`<span style="color:var(--ink-soft);font-size:10.5px;margin-left:6px">${it.items}</span>`:''}
+      // find if this item is assigned to a DIFFERENT cell
+      const assignedElsewhere=it.assignedCellIds&&it.assignedCellIds.length&&!linked;
+      const elseWhere=assignedElsewhere?getItemAssignmentLabel(it):null;
+      // hard block: Keep items assigned elsewhere — show but disabled
+      const hardBlock=it.action==='keep'&&assignedElsewhere;
+      // soft warn: Pending items assigned elsewhere — show with warning
+      const softWarn=it.action==='pending'&&assignedElsewhere;
+      const locationNote=elseWhere?`<span style="font-size:10px;color:${hardBlock?'var(--ink-soft)':'var(--amber)'};margin-left:6px;font-style:italic">${hardBlock?'↳ '+elseWhere.join(', '):'⚠ also in '+elseWhere.join(', ')}</span>`:'';
+      return`<label class="item-link-check" style="${hardBlock?'opacity:.45;cursor:not-allowed':''}">
+        <input type="checkbox" value="${it.id}" ${linked?'checked':''} ${hardBlock?'disabled':''} onchange="syncCellContentFromItems()">
+        <span style="flex:1">${it.category}${it.items?`<span style="color:var(--ink-soft);font-size:10.5px;margin-left:6px">${it.items}</span>`:''}${locationNote}
         </span>
       </label>`;
     }).join('');
@@ -1479,9 +1502,27 @@ function openEditItem(id){
 function saveItem(){
   const id=document.getElementById('ei-id').value;
   const item=S.items.find(i=>i.id===id);if(!item)return;
+  const prevAction=item.action;
   item.category=(document.getElementById('ei-category').value.trim()||item.category).toUpperCase();
   item.action=document.getElementById('ei-action').value;
   item.items=document.getElementById('ei-items').value.toLowerCase();
+  // if action changed to out, clear all cell links for this item
+  if(OUT_ACTIONS.includes(item.action)&&!OUT_ACTIONS.includes(prevAction)){
+    if(item.assignedCellIds&&item.assignedCellIds.length){
+      item.assignedCellIds.forEach(ref=>{
+        const sp=findSpInRoom(ref.roomId,ref.spaceId);
+        if(sp){
+          const cell=sp.cells.find(c=>c.id===ref.cellId);
+          if(cell){
+            // if this was the only item linked, clear the cell content
+            const otherLinked=S.items.filter(i=>i.id!==id&&i.assignedCellIds&&i.assignedCellIds.some(r=>r.cellId===ref.cellId));
+            if(!otherLinked.length){cell.content='empty';cell.type='empty';}
+          }
+        }
+      });
+      item.assignedCellIds=[];
+    }
+  }
   save();closeModal('modal-edit-item');renderItems();toast('Item updated');
 }
 function deleteItem(){
