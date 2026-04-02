@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Audit System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Sage + Clay palette */
+  --ink:#556056;--ink-soft:#6B736B;
+  --paper:#F7F4EF;--paper-warm:#DCE4D7;--paper-dark:#C8D4C2;
+  --teal:#9FAA93;--teal-light:#DCE4D7;--teal-dark:#556056;
+  --amber:#C9A792;--amber-light:#F0E4DA;
+  --red:#b84040;--red-light:#fce8e8;
+  --green:#7A9E7E;--green-light:#D8EAD9;
+  --blue:#7A95A0;--blue-light:#D8E8EE;
+  --purple:#9A8FAA;--purple-light:#EAE5F0;
+  --clay:#C9A792;--clay-light:#F0E4DA;
+  --sidebar-bg:#556056;--sidebar-text:#F7F4EF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:252px;min-width:252px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;overflow-y:auto;z-index:10}
+.main{flex:1;overflow-y:auto;background:var(--paper)}
+.sidebar-logo{padding:22px 20px 14px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-logo h1{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.2;letter-spacing:-.02em}
+.sidebar-logo p{font-size:11px;color:rgba(255,255,255,.35);margin-top:4px;font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
+.sidebar-section{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.sidebar-section-label{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:4px 18px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.6);transition:all .15s;border-left:3px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-item:hover{background:rgba(255,255,255,.06);color:white}
+.nav-item.active{background:rgba(255,255,255,.15);color:white;border-left-color:var(--clay)}
+.nav-item .nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.add-room-btn{margin:10px 14px;padding:8px 12px;background:rgba(255,255,255,.1);border:1px dashed rgba(255,255,255,.3);border-radius:6px;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+.add-room-btn:hover{background:rgba(255,255,255,.18);border-style:solid}
+.transit-badge{background:var(--clay);color:white;font-size:10px;border-radius:10px;padding:1px 6px;margin-left:auto;font-family:'DM Mono',monospace;flex-shrink:0}
+.page-header{padding:22px 30px 16px;border-bottom:1px solid var(--paper-dark);background:var(--paper);position:sticky;top:0;z-index:5}
+.page-header h2{font-family:'DM Serif Display',serif;font-size:25px;letter-spacing:-.03em}
+.page-header p{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+.page-header-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.page-content{padding:22px 30px}
+.btn{padding:7px 14px;border-radius:6px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--teal-dark);color:white}.btn-primary:hover{background:#445045}
+.btn-ghost{background:transparent;border:1px solid var(--paper-dark);color:var(--ink-soft)}.btn-ghost:hover{background:var(--paper-warm);color:var(--ink)}
+.btn-danger{background:var(--red-light);color:var(--red);border:1px solid #f5c6c6}.btn-danger:hover{background:#f5c6c6}
+.btn-sm{padding:5px 11px;font-size:12px}.btn-xs{padding:3px 8px;font-size:11px}
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.page{display:none}.page.active{display:block}
+
+/* dashboard */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:26px}
+.stat-card{background:white;border:1px solid var(--paper-dark);border-radius:10px;padding:16px}
+.stat-label{font-size:11px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+.stat-value{font-family:'DM Serif Display',serif;font-size:32px;letter-spacing:-.04em;margin-top:3px}
+.stat-sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px}
+.stat-card.teal .stat-value{color:var(--teal-dark)}.stat-card.amber .stat-value{color:var(--clay)}.stat-card.green .stat-value{color:var(--green)}.stat-card.red .stat-value{color:var(--red)}
+.philosophy-banner{background:var(--sidebar-bg);color:var(--sidebar-text);border-radius:12px;padding:20px 24px;margin-bottom:26px;display:flex;align-items:center;gap:22px}
+.philosophy-banner .quote{font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;flex:1;line-height:1.4}
+.philosophy-banner .rules{flex:1}
+.rule-item{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:rgba(255,255,255,.7);margin-bottom:6px}
+.rule-dot{width:5px;height:5px;border-radius:50%;background:var(--clay);margin-top:5px;flex-shrink:0}
+.week-plan{background:white;border:1px solid var(--paper-dark);border-radius:12px;overflow:hidden}
+.week-plan-header{padding:13px 18px;border-bottom:1px solid var(--paper-dark);display:flex;justify-content:space-between;align-items:center}
+.week-plan-header h3{font-family:'DM Serif Display',serif;font-size:16px}
+.day-row{display:flex;align-items:center;padding:10px 18px;border-bottom:1px solid var(--paper-warm);gap:13px}
+.day-row:last-child{border-bottom:none}.day-row:hover{background:var(--paper-warm)}
+.day-label{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--teal-dark);width:44px}
+.day-task{flex:1;font-size:13px}
+.day-check{width:20px;height:20px;border:2px solid var(--paper-dark);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:12px;color:white;flex-shrink:0}
+.day-check.done{background:var(--teal-dark);border-color:var(--teal-dark)}
+
+/* room page */
+.view-toggle{display:flex;background:var(--paper-warm);border-radius:6px;overflow:hidden;border:1px solid var(--paper-dark)}
+.view-btn{padding:6px 13px;font-size:12px;cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:all .15s;color:var(--ink-soft)}
+.view-btn.active{background:var(--teal-dark);color:white}
+.legend{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:14px;align-items:center;font-size:11.5px;color:var(--ink-soft)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-swatch{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}
+.spaces-wrap{display:flex;flex-direction:column;gap:18px}
+
+/* space card */
+.space-card{background:white;border:1px solid var(--paper-dark);border-radius:12px;overflow:visible;transition:box-shadow .2s}
+.space-card.drag-over{box-shadow:0 0 0 2px var(--teal-dark),0 4px 20px rgba(85,96,86,.2)}
+.space-card.dragging{opacity:.4}
+.space-header{display:flex;align-items:center;gap:10px;padding:12px 15px;background:var(--sidebar-bg);border-radius:12px 12px 0 0;min-height:48px}
+.drag-handle{cursor:grab;color:rgba(255,255,255,.25);font-size:17px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0;user-select:none;transition:all .15s}
+.drag-handle:hover{color:rgba(255,255,255,.65);background:rgba(255,255,255,.08)}
+.drag-handle:active{cursor:grabbing}
+.space-name-display{font-family:'DM Serif Display',serif;font-size:15px;color:white;flex:1;min-width:0;cursor:pointer}
+.space-name-display:hover{opacity:.8}
+.space-name-input{font-family:'DM Serif Display',serif;font-size:15px;color:white;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:3px 8px;flex:1;min-width:0;outline:none}
+.space-name-input:focus{border-color:var(--teal)}
+.space-meta{font-size:10.5px;color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;white-space:nowrap}
+.space-actions{display:flex;gap:4px;flex-shrink:0}
+.sab{padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.55);font-size:11px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.sab:hover{background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.3)}
+.sab.d:hover{background:rgba(184,64,64,.3);color:#fca5a5;border-color:rgba(184,64,64,.4)}
+
+/* config bar */
+.grid-config-bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 15px;background:var(--paper-warm);border-bottom:1px solid var(--paper-dark);font-size:12px;color:var(--ink-soft)}
+.grid-config-bar.open{display:flex}
+.grid-config-bar label{display:flex;align-items:center;gap:6px;font-weight:500;color:var(--ink)}
+.grid-config-bar input[type=number]{width:50px;padding:4px 7px;border:1px solid var(--paper-dark);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;text-align:center;outline:none}
+.grid-config-bar input[type=number]:focus{border-color:var(--teal)}
+.grid-config-bar select{padding:4px 7px;border:1px solid var(--paper-dark);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;background:white}
+
+/* grid */
+.space-grid-wrap{padding:12px;overflow-x:auto}
+.cell-grid{display:grid;gap:4px}
+.row-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--ink-soft);text-align:right;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88px;cursor:pointer;display:flex;align-items:center;justify-content:flex-end}
+.row-label:hover{color:var(--teal)}
+.col-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--ink-soft);text-align:center;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.col-label:hover{color:var(--teal)}
+
+/* cells */
+.storage-cell{background:var(--paper-warm);border:1.5px solid var(--paper-dark);border-radius:6px;padding:8px 10px;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column;justify-content:center;user-select:none;overflow:hidden}
+.storage-cell:hover{border-color:var(--teal-dark);box-shadow:0 2px 8px rgba(85,96,86,.12);z-index:1}
+.storage-cell.type-empty{background:var(--paper);border-style:dashed;opacity:.65}
+.storage-cell.type-empty:hover{opacity:1}
+.storage-cell.type-tbc{background:repeating-linear-gradient(45deg,var(--paper),var(--paper) 5px,var(--paper-warm) 5px,var(--paper-warm) 10px)}
+.storage-cell.type-fixture{background:#e8e4de;border-style:dashed;cursor:default}
+.storage-cell.type-fixture:hover{border-color:var(--paper-dark);box-shadow:none}
+.cell-status-dot{position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cell-status-dot.done{background:var(--green)}.cell-status-dot.inprogress{background:var(--amber)}.cell-status-dot.todo{background:#ccc}
+.cell-content-text{font-size:11px;font-weight:500;line-height:1.35;word-break:break-word;padding-left:14px}
+.cell-container-tag{font-size:9.5px;color:var(--ink-soft);margin-top:4px;font-weight:400;padding-left:14px}
+.cell-drag-handle{position:absolute;top:50%;left:3px;transform:translateY(-50%);font-size:11px;color:rgba(0,0,0,.18);cursor:grab;line-height:1;padding:2px;border-radius:3px;transition:all .15s;user-select:none;opacity:0}
+.storage-cell:hover .cell-drag-handle{opacity:1}
+.cell-drag-handle:hover{color:var(--teal);background:rgba(42,127,127,.1)}
+.cell-drag-handle:active{cursor:grabbing}
+.storage-cell.cell-dragging{opacity:.3;border-style:dashed;border-color:var(--teal)}
+.storage-cell.cell-drag-over{border-color:var(--teal);box-shadow:0 0 0 2px rgba(42,127,127,.3);background:var(--teal-light)}
+.add-cell-ghost{background:transparent;border:1.5px dashed var(--paper-dark);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;color:var(--ink-soft);font-size:18px}
+.add-cell-ghost:hover{border-color:var(--teal-dark);color:var(--teal-dark);background:var(--paper-warm)}
+
+/* list view */
+.list-table{background:white;border:1px solid var(--paper-dark);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.list-table table{width:100%;border-collapse:collapse}
+.list-table th{background:var(--teal-dark);color:white;padding:10px 14px;text-align:left;font-size:10.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.list-table td{padding:9px 14px;font-size:12.5px;border-bottom:1px solid var(--paper-warm);vertical-align:top}
+.list-table tr:nth-child(even) td{background:var(--paper-warm)}
+.list-table tr:hover td{background:var(--paper-warm);cursor:pointer}
+.list-table tr:last-child td{border-bottom:none}
+.list-table-header{padding:12px 16px;border-bottom:1px solid var(--paper-dark);display:flex;justify-content:space-between;align-items:center}
+.list-table-header h3{font-family:'DM Serif Display',serif;font-size:15px}
+
+/* items */
+.item-card{background:white;border:1px solid var(--paper-dark);border-radius:9px;padding:13px 17px;display:flex;align-items:center;gap:13px;margin-bottom:9px;cursor:pointer;transition:all .15s}
+.item-card:hover{border-color:var(--teal-dark);box-shadow:0 2px 8px rgba(85,96,86,.12)}
+.item-category{font-weight:600;font-size:13.5px;flex:1}
+.item-contents{font-size:12px;color:var(--ink-soft);flex:2}
+.tag{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.tag-keep{background:var(--teal-light);color:var(--teal-dark)}.tag-pending{background:var(--blue-light);color:var(--blue)}.tag-sell{background:var(--red-light);color:var(--red)}.tag-donate{background:var(--amber-light);color:var(--amber)}.tag-room{background:var(--paper-warm);color:var(--ink-soft);border:1px solid var(--paper-dark)}
+.add-item-form{background:var(--paper-warm);border:1px dashed var(--paper-dark);border-radius:10px;padding:17px;margin-bottom:15px}
+
+/* transit */
+.transit-bins{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:22px}
+.transit-bin{background:white;border:2px solid var(--paper-dark);border-radius:12px;overflow:hidden}
+.transit-bin-header{padding:11px 13px;display:flex;align-items:center;gap:9px}
+.transit-bin.return .transit-bin-header{background:var(--blue-light)}.transit-bin.out .transit-bin-header{background:var(--red-light)}.transit-bin.decide .transit-bin-header{background:var(--amber-light)}
+.transit-bin-icon{font-size:17px}.transit-bin-name{font-weight:600;font-size:13px}.transit-bin-rule{font-size:10px;color:var(--ink-soft)}
+.transit-items{padding:9px;min-height:55px}
+.transit-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;margin-bottom:5px;background:var(--paper-warm);font-size:12px;cursor:pointer;transition:all .15s}
+.transit-item:hover{background:var(--paper-dark)}.transit-item.overdue{background:var(--red-light)}
+.transit-item-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-soft);white-space:nowrap}.transit-item-name{flex:1}
+.log-table{background:white;border:1px solid var(--paper-dark);border-radius:10px;overflow:hidden}
+.log-table table{width:100%;border-collapse:collapse}
+.log-table th{background:var(--sidebar-bg);color:white;padding:9px 13px;text-align:left;font-size:10.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.log-table td{padding:9px 13px;font-size:12.5px;border-bottom:1px solid var(--paper-warm)}
+.log-table tr:hover td{background:var(--paper-warm);cursor:pointer}.log-table tr:last-child td{border-bottom:none}
+
+/* containers */
+.container-table{background:white;border:1px solid var(--paper-dark);border-radius:10px;overflow:hidden}
+.container-table table{width:100%;border-collapse:collapse}
+.container-table th{background:var(--teal);color:white;padding:9px 13px;text-align:left;font-size:10.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.container-table td{padding:9px 13px;font-size:12.5px;border-bottom:1px solid var(--paper-warm);vertical-align:top}
+.container-table tr:nth-child(even) td{background:var(--paper-warm)}.container-table tr:hover td{background:var(--teal-light)}.container-table tr:last-child td{border-bottom:none}
+.size-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;text-transform:uppercase}
+.size-S{background:var(--green-light);color:var(--green)}.size-M{background:var(--blue-light);color:var(--blue)}.size-L{background:var(--purple-light);color:var(--purple)}.size-XL{background:var(--amber-light);color:var(--amber)}
+
+/* forms */
+.form-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.form-group{display:flex;flex-direction:column;gap:3px;flex:1;min-width:110px}
+.form-group label{font-size:10.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+.form-group input,.form-group select,.form-group textarea{padding:7px 10px;border:1px solid var(--paper-dark);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;background:white;outline:none;transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--teal-dark)}
+.form-group textarea[readonly]{background:var(--paper-warm);color:var(--ink-soft);cursor:default;border-style:dashed}
+.section-card-header{padding:12px 17px;border-bottom:1px solid var(--paper-dark);display:flex;justify-content:space-between;align-items:center}
+
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,.55);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:13px;padding:24px;width:480px;max-width:92vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{font-family:'DM Serif Display',serif;font-size:21px;margin-bottom:3px}
+.modal .modal-sub{color:var(--ink-soft);font-size:12px;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:13px;border-top:1px solid var(--paper-dark)}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--sidebar-bg);color:white;padding:10px 15px;border-radius:8px;font-size:13px;z-index:200;transform:translateY(70px);opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.toast.show{transform:translateY(0);opacity:1}
+.assign-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.assign-badge.assigned{background:var(--green-light);color:var(--green)}
+.assign-badge.unassigned{background:var(--red-light);color:var(--red)}
+.assign-badge.out{background:var(--amber-light);color:var(--amber)}
+.item-card{background:white;border:1px solid var(--paper-dark);border-radius:9px;padding:13px 17px;display:flex;align-items:flex-start;gap:13px;margin-bottom:9px;cursor:pointer;transition:all .15s;flex-wrap:wrap}
+.item-card:hover{border-color:var(--teal-dark);box-shadow:0 2px 8px rgba(85,96,86,.12)}
+.item-card.unassigned-item{border-left:3px solid var(--red)}
+.item-card.assigned-item{border-left:3px solid var(--green)}
+.item-card.out-item{border-left:3px solid var(--amber)}
+.item-card-main{display:flex;align-items:center;gap:13px;flex:1;min-width:0;width:100%}
+.item-assignment-detail{font-size:11.5px;color:var(--ink-soft);padding:6px 0 2px;width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cell-link-pill{background:var(--paper-warm);color:var(--teal-dark);border-radius:4px;padding:2px 7px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s}
+.cell-link-pill:hover{background:var(--teal-dark);color:white}
+.item-link-check{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;font-size:12.5px;cursor:pointer;transition:background .1s}
+.item-link-check:hover{background:var(--paper-warm)}
+.item-link-check input{cursor:pointer;width:14px;height:14px;accent-color:var(--teal-dark)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--paper-dark);border-radius:3px}
+textarea[readonly]{background:var(--paper-warm);color:var(--ink-soft);cursor:default;}
+
+/* ══════════════════════════════════════════════
+   MOBILE HAMBURGER TOGGLE
+══════════════════════════════════════════════ */
+.mobile-bar{display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--sidebar-bg);color:white;position:sticky;top:0;z-index:20}
+.mobile-bar h1{font-family:'DM Serif Display',serif;font-size:16px;flex:1;line-height:1.1}
+.mobile-bar p{font-size:9px;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.hamburger{background:none;border:none;cursor:pointer;padding:4px;color:white;font-size:22px;line-height:1;flex-shrink:0}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:15}
+.sidebar-overlay.open{display:block}
+
+@media(max-width:768px){
+  .mobile-bar{display:flex}
+  .app{flex-direction:column;height:auto;overflow:visible}
+  .sidebar{
+    position:fixed;top:0;left:-280px;width:280px;height:100vh;
+    z-index:16;transition:left .25s ease;overflow-y:auto
+  }
+  .sidebar.open{left:0}
+  .main{overflow-y:visible;padding-bottom:env(safe-area-inset-bottom)}
+
+  /* page header stacks on mobile */
+  .page-header{padding:14px 16px 12px;position:static}
+  .page-header-row{flex-wrap:wrap;gap:8px;align-items:flex-start}
+  .page-header h2{font-size:20px}
+  .btn-row{flex-wrap:wrap}
+
+  /* page content tighter */
+  .page-content{padding:14px 16px}
+
+  /* stats row — 2 columns on mobile */
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
+  .stat-value{font-size:26px}
+
+  /* philosophy banner stacks */
+  .philosophy-banner{flex-direction:column;gap:14px;padding:16px}
+
+  /* recommended flow stacks */
+  #recommended-flow>div{flex-direction:column}
+  #recommended-flow>div>div{border-right:none!important;border-bottom:1px solid var(--paper-dark)}
+  #recommended-flow>div>div:last-child{border-bottom:none}
+
+  /* transit bins stack */
+  .transit-bins{grid-template-columns:1fr;gap:10px}
+
+  /* item card wraps */
+  .item-card-main{flex-wrap:wrap;gap:8px}
+  .item-contents{flex:1 1 100%;order:3}
+
+  /* tables scroll horizontally */
+  .log-table,.list-table{overflow-x:auto}
+  .log-table table,.list-table table{min-width:480px}
+
+  /* modal full-width */
+  .modal{width:100%!important;max-width:100vw;max-height:90vh;border-radius:16px 16px 0 0;position:fixed;bottom:0;left:0;right:0;margin:0}
+  .modal-overlay.open{align-items:flex-end}
+
+  /* room grid — horizontal scroll */
+  .space-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* cell grid min-width so cells stay readable */
+  .cell-grid{min-width:360px}
+
+  /* space header actions wrap */
+  .space-actions{flex-wrap:wrap;gap:4px}
+
+  /* day row task text */
+  .day-task{font-size:12px}
+
+  /* hide drag handles on touch (not usable anyway) */
+  .drag-handle,.cell-drag-handle{display:none}
+
+  /* add-item form full width fields */
+  .add-item-form .form-row{flex-direction:column}
+  .add-item-form .form-group{min-width:0}
+}
+</style>
+
+<style id="gate-style">
+#pw-gate{
+  position:fixed;inset:0;z-index:9999;
+  background:#F7F4EF;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Sans',sans-serif;
+}
+#pw-gate.hidden{display:none}
+.pw-card{
+  background:white;
+  border:1px solid #C8D4C2;
+  border-radius:16px;
+  padding:40px 36px;
+  width:340px;
+  max-width:90vw;
+  box-shadow:0 8px 40px rgba(85,96,86,.12);
+  text-align:center;
+}
+.pw-logo{
+  font-family:'DM Serif Display',serif;
+  font-size:24px;
+  color:#556056;
+  margin-bottom:4px;
+  line-height:1.2;
+}
+.pw-sub{
+  font-size:11px;
+  color:#6B736B;
+  font-family:'DM Mono',monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:28px;
+}
+.pw-label{
+  display:block;
+  font-size:11px;
+  font-family:'DM Mono',monospace;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#6B736B;
+  margin-bottom:8px;
+  text-align:left;
+}
+.pw-input{
+  width:100%;
+  padding:11px 14px;
+  border:1.5px solid #C8D4C2;
+  border-radius:8px;
+  font-family:'DM Sans',sans-serif;
+  font-size:15px;
+  outline:none;
+  transition:border .15s;
+  margin-bottom:14px;
+  background:#F7F4EF;
+  color:#556056;
+  letter-spacing:.05em;
+}
+.pw-input:focus{border-color:#556056}
+.pw-input.error{border-color:#b84040;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pw-btn{
+  width:100%;
+  padding:11px;
+  background:#556056;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-family:'DM Sans',sans-serif;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background .15s;
+  letter-spacing:.01em;
+}
+.pw-btn:hover{background:#445045}
+.pw-error{
+  color:#b84040;
+  font-size:12px;
+  margin-top:10px;
+  min-height:18px;
+}
+.pw-hint{
+  font-size:11px;
+  color:#9FAA93;
+  margin-top:20px;
+  line-height:1.5;
+}
+</style>
+</head>
+<body>
+<!-- PASSWORD GATE -->
+<div id="pw-gate">
+  <div class="pw-card">
+    <div class="pw-logo">Home<br>Audit</div>
+    <div class="pw-sub">A Raeorganised System</div>
+    <label class="pw-label" for="pw-input">Password</label>
+    <input
+      class="pw-input"
+      id="pw-input"
+      type="password"
+      placeholder="Enter password"
+      autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkPw()"
+      autofocus
+    >
+    <button class="pw-btn" onclick="checkPw()">Unlock</button>
+    <div class="pw-error" id="pw-error"></div>
+    <div class="pw-hint">This is a private tool.<br>Access is restricted.</div>
+  </div>
+</div>
+
+<!-- Mobile top bar -->
+<div class="mobile-bar">
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+  <div><h1>Home Audit</h1><p>A Raeorganised System</p></div>
+</div>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><h1>Home<br>Audit</h1><p>A RAEORGANISED SYSTEM</p></div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Overview</div>
+    <div class="nav-item" data-nav="dashboard"><span class="nav-icon">⌂</span>Dashboard</div>
+    <div class="nav-item" data-nav="items"><span class="nav-icon">☰</span>Item Audit</div>
+    <div class="nav-item" data-nav="transit"><span class="nav-icon">⟳</span>Transit Zone<span class="transit-badge" id="transit-count">0</span></div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Rooms</div>
+    <div id="room-nav"></div>
+    <button class="add-room-btn" onclick="openAddRoomModal()">+ Add Room</button>
+  </div>
+</aside>
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header"><div class="page-header-row"><div><h2>Home Audit</h2><p>Week of <span id="week-date"></span></p></div><div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="resetToTemplate()" style="color:var(--ink-soft)">↺ Reset to template</button><button class="btn btn-primary" onclick="navigate('items')">Start Audit →</button></div></div></div>
+  <div class="page-content">
+    <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat-card teal"><div class="stat-label">Rooms</div><div class="stat-value" id="stat-rooms">0</div><div class="stat-sub">in scope</div></div>
+      <div class="stat-card green"><div class="stat-label">Assigned</div><div class="stat-value" id="stat-assigned">0</div><div class="stat-sub" id="stat-assigned-sub">of 0 items</div></div>
+      <div class="stat-card red"><div class="stat-label">Needs Home</div><div class="stat-value" id="stat-unassigned">0</div><div class="stat-sub">items unplaced</div></div>
+      <div class="stat-card amber"><div class="stat-label">Transit</div><div class="stat-value" id="stat-transit">0</div><div class="stat-sub">to action</div></div>
+      <div class="stat-card" style="border-left:3px solid var(--ink)"><div class="stat-label">Progress</div><div class="stat-value" id="stat-days">0/9</div><div class="stat-sub">tasks done</div></div>
+    </div>
+    <div id="audit-progress-bar-wrap" style="margin-bottom:22px;background:white;border:1px solid var(--paper-dark);border-radius:10px;padding:16px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-weight:600;font-size:13px">Audit Coverage</span>
+        <span style="font-size:12px;color:var(--ink-soft)"><span id="prog-pct">0</span>% of items have a home</span>
+      </div>
+      <div style="background:var(--paper-dark);border-radius:6px;height:10px;overflow:hidden;display:flex">
+        <div id="prog-assigned" style="background:var(--green);height:100%;transition:width .4s"></div>
+        <div id="prog-out" style="background:var(--amber);height:100%;transition:width .4s"></div>
+        <div id="prog-unassigned" style="background:var(--paper-dark);height:100%;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--ink-soft)">
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--green);margin-right:4px"></span>Assigned to a cell</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--amber);margin-right:4px"></span>Out (sell/donate/discard)</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--paper-dark);margin-right:4px"></span>Needs a home</span>
+      </div>
+      <div id="unassigned-list" style="margin-top:12px"></div>
+    </div>
+    <div class="philosophy-banner">
+      <div class="quote">"A Home for Everything,<br>Friction for Hoarding."</div>
+      <div class="rules">
+        <div class="rule-item"><div class="rule-dot"></div>Container = Home. Label = Address.</div>
+        <div class="rule-item"><div class="rule-dot"></div>One container, one category. No exceptions.</div>
+        <div class="rule-item"><div class="rule-dot"></div>Finish the room before you leave it.</div>
+        <div class="rule-item"><div class="rule-dot"></div>Fill to 80%. Empty space invites hoarding.</div>
+        <div class="rule-item"><div class="rule-dot"></div>One in, one out. New item needs a home first.</div>
+      </div>
+    </div>
+    <div class="week-plan" style="margin-bottom:18px">
+      <div class="week-plan-header"><h3>Recommended Flow</h3></div>
+      <div id="recommended-flow" style="border-bottom:1px solid var(--paper-dark)"></div>
+    </div>
+    <div class="week-plan"><div class="week-plan-header"><h3>Progress Checklist</h3><span style="font-size:12px;color:var(--ink-soft)">Click to tick off</span></div><div id="day-plan"></div></div>
+  </div>
+</div>
+
+<!-- ITEMS -->
+<div class="page" id="page-items">
+  <div class="page-header"><div class="page-header-row"><div><h2>Item Audit</h2><p>Every item you own has a home</p></div><button class="btn btn-primary btn-sm" onclick="toggleAddItem()">+ Add Item</button></div></div>
+  <div class="page-content">
+    <div id="items-summary-bar" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap"></div>
+    <div class="add-item-form" id="add-item-form" style="display:none;margin-bottom:16px;">
+      <div class="form-row"><div class="form-group"><label>Category</label><input id="new-cat" placeholder="e.g. WINTER CLOTHES"></div><div class="form-group"><label>Action</label><select id="new-action"><option value="keep">Keep</option><option value="donate">Donate</option><option value="sell">Sell</option><option value="discard">Discard</option><option value="return">Return</option><option value="pending">Pending</option></select></div></div>
+      <div class="form-row"><div class="form-group" style="flex:3"><label>Items (comma separated)</label><input id="new-items-list" placeholder="e.g. winter coat, ski jacket"></div></div>
+      <div class="btn-row"><button class="btn btn-primary btn-sm" onclick="addItem()">Add</button><button class="btn btn-ghost btn-sm" onclick="toggleAddItem()">Cancel</button></div>
+    </div>
+    <div id="items-list"></div>
+  </div>
+</div>
+
+<!-- ROOM -->
+<div class="page" id="page-room">
+  <div class="page-header">
+    <div class="page-header-row">
+      <div><h2 id="room-page-title" ondblclick="renameRoom(event)" title="Double-click to rename" style="cursor:pointer">Room</h2><p>Double-click room title or space name to rename · Drag ⠿ to reorder spaces</p></div>
+      <div class="btn-row">
+        <div class="view-toggle"><button class="view-btn active" onclick="setRoomView('grid')" id="vbtn-grid">Grid</button><button class="view-btn" onclick="setRoomView('list')" id="vbtn-list">List</button></div>
+        <button class="btn btn-primary btn-sm" onclick="openAddSpaceModal()">+ Add Space</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRoom()">Delete Room</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--paper-warm)"></div>Assigned</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--paper);border-style:dashed"></div>Empty</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(45deg,var(--paper),var(--paper) 4px,var(--paper-warm) 4px,var(--paper-warm) 8px)"></div>TBC</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:#e8e4de;border-style:dashed"></div>Fixture</div>
+      <div style="margin-left:auto;display:flex;gap:10px;font-size:11px;color:var(--ink-soft)">
+        <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px"></span>Done</span>
+        <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:4px"></span>In Progress</span>
+        <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ccc;margin-right:4px"></span>Todo</span>
+      </div>
+    </div>
+    <div id="room-grid-view"><div class="spaces-wrap" id="spaces-container"></div></div>
+    <div id="room-list-view" style="display:none"></div>
+  </div>
+</div>
+
+<!-- TRANSIT -->
+<div class="page" id="page-transit">
+  <div class="page-header"><div class="page-header-row"><div><h2>Transit Zone</h2><p>Three bins · Fixed size · Weekly review</p></div><button class="btn btn-primary btn-sm" onclick="openAddTransitModal()">+ Log Item</button></div></div>
+  <div class="page-content">
+    <div class="transit-bins">
+      <div class="transit-bin return"><div class="transit-bin-header"><div class="transit-bin-icon">📦</div><div><div class="transit-bin-name">Return</div><div class="transit-bin-rule">Borrowed · 2 weeks max</div></div></div><div class="transit-items" id="bin-return"></div></div>
+      <div class="transit-bin out"><div class="transit-bin-header"><div class="transit-bin-icon">📦</div><div><div class="transit-bin-name">Out</div><div class="transit-bin-rule">Sell / donate · 4 weeks max</div></div></div><div class="transit-items" id="bin-out"></div></div>
+      <div class="transit-bin decide"><div class="transit-bin-header"><div class="transit-bin-icon">📦</div><div><div class="transit-bin-name">Decide</div><div class="transit-bin-rule">Unsure · 2 weeks max</div></div></div><div class="transit-items" id="bin-decide"></div></div>
+    </div>
+    <div class="log-table">
+      <div class="section-card-header" style="padding:12px 16px;"><h3 style="font-family:'DM Serif Display',serif;font-size:15px;">Log</h3><span style="font-size:12px;color:var(--ink-soft)">Click row to resolve</span></div>
+      <table><thead><tr><th>Bin</th><th>Description</th><th>Date In</th><th>Deadline</th><th>Status</th></tr></thead><tbody id="transit-tbody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--ink-soft);font-style:italic">No items yet</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+
+
+
+</main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-room">
+  <div class="modal"><h3>Add Room</h3><p class="modal-sub">Create a room — then add storage spaces inside it</p>
+  <div class="form-row"><div class="form-group"><label>Room Name</label><input id="nr-name" placeholder="e.g. Walk-in Wardrobe"></div><div class="form-group" style="max-width:80px"><label>Icon</label><input id="nr-icon" placeholder="🏠" style="text-align:center"></div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-room')">Cancel</button><button class="btn btn-primary" onclick="addRoom()">Add Room</button></div></div>
+</div>
+
+<div class="modal-overlay" id="modal-space">
+  <div class="modal"><h3>Add Storage Space</h3><p class="modal-sub">A space is a cupboard, shelf unit, wardrobe, drawer bank — anything with cells inside it</p>
+  <div class="form-row"><div class="form-group"><label>Space Name</label><input id="ns-name" placeholder="e.g. Left Cupboard"></div></div>
+  <div class="form-row"><div class="form-group"><label>Columns</label><input type="number" id="ns-cols" value="3" min="1" max="12"></div><div class="form-group"><label>Rows</label><input type="number" id="ns-rows" value="3" min="1" max="16"></div></div>
+  <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px">Columns and rows can be changed later via ⚙ Configure. Each cell = one shelf, drawer, or zone.</p>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-space')">Cancel</button><button class="btn btn-primary" onclick="addSpace()">Add Space</button></div></div>
+</div>
+
+<div class="modal-overlay" id="modal-cell">
+  <div class="modal"><h3>Edit Cell</h3><p class="modal-sub" id="modal-cell-sub">Update contents and status</p>
+  <div class="form-group" style="margin-bottom:10px">
+    <label>Linked Audit Items <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--ink-soft)">(select all that live here — contents will auto-fill)</span></label>
+    <div id="cell-item-links" style="border:1px solid var(--paper-dark);border-radius:6px;padding:8px;max-height:160px;overflow-y:auto;background:white;display:flex;flex-direction:column;gap:4px">
+      <span style="font-size:12px;color:var(--ink-soft);font-style:italic">Loading…</span>
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom:10px"><label>Contents <span id="cell-content-note" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--ink-soft)"></span></label><textarea id="cell-content" rows="3" placeholder="What lives here?"></textarea></div>
+  <div class="form-group" style="margin-bottom:10px"><label>Status</label><select id="cell-status"><option value="todo">Todo</option><option value="inprogress">In Progress</option><option value="done">Done</option></select></div>
+  <input type="hidden" id="edit-room-id"><input type="hidden" id="edit-space-id"><input type="hidden" id="edit-cell-id">
+  <div class="modal-footer"><button class="btn btn-danger btn-sm" onclick="deleteCell()">Delete Cell</button><div style="flex:1"></div><button class="btn btn-ghost" onclick="closeModal('modal-cell')">Cancel</button><button class="btn btn-primary" onclick="saveCell()">Save</button></div></div>
+</div>
+
+<div class="modal-overlay" id="modal-label">
+  <div class="modal" style="width:360px"><h3 id="modal-label-title">Edit Label</h3><p class="modal-sub">Name this row or column</p>
+  <div class="form-group" style="margin-bottom:10px"><label>Label</label><input id="label-input" placeholder="e.g. Top shelf"></div>
+  <input type="hidden" id="label-type"><input type="hidden" id="label-room-id"><input type="hidden" id="label-space-id"><input type="hidden" id="label-index">
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-label')">Cancel</button><button class="btn btn-primary" onclick="saveLabel()">Save</button></div></div>
+</div>
+
+<div class="modal-overlay" id="modal-transit">
+  <div class="modal"><h3>Log Transit Item</h3><p class="modal-sub">Add to the holding zone</p>
+  <div class="form-row"><div class="form-group"><label>Bin</label><select id="tr-bin"><option value="return">Return (2 wks)</option><option value="out">Out — Sell/Donate (4 wks)</option><option value="decide">Decide (2 wks)</option></select></div></div>
+  <div class="form-group" style="margin-bottom:10px"><label>Description</label><input id="tr-name" placeholder="e.g. Borrowed Dyson — return to Sarah"></div>
+  <div class="form-group" style="margin-bottom:10px"><label>Date In</label><input type="date" id="tr-date"></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-transit')">Cancel</button><button class="btn btn-primary" onclick="addTransitItem()">Log</button></div></div>
+</div>
+
+
+
+
+<div class="modal-overlay" id="modal-edit-item">
+  <div class="modal"><h3>Edit Item</h3><p class="modal-sub" id="edit-item-sub">Update category details</p>
+  <div class="form-row">
+    <div class="form-group" style="flex:2"><label>Category</label><input id="ei-category" placeholder="e.g. School momentos"></div>
+    <div class="form-group"><label>Action</label><select id="ei-action"><option value="keep">Keep</option><option value="donate">Donate</option><option value="sell">Sell</option><option value="discard">Discard</option><option value="return">Return</option><option value="pending">Pending</option></select></div>
+  </div>
+  <div class="form-group" style="margin-bottom:12px"><label>Items (comma separated)</label><input id="ei-items" placeholder="e.g. artwork, school journal, school photos"></div>
+  <input type="hidden" id="ei-id">
+  <div class="modal-footer">
+    <button class="btn btn-danger btn-sm" onclick="deleteItem()">Remove Item</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost" onclick="closeModal('modal-edit-item')">Cancel</button>
+    <button class="btn btn-primary" onclick="saveItem()">Save</button>
+  </div></div>
+</div>
+
+<div class="modal-overlay" id="modal-task">
+  <div class="modal" style="width:460px"><h3 id="task-modal-title">Add Task</h3><p class="modal-sub">Add to the progress checklist</p>
+  <div class="form-row">
+    <div class="form-group"><label>Section</label><select id="task-edit-section"><option value="audit">Item Audit</option><option value="rooms">Room Reorganisation</option></select></div>
+    <div class="form-group" style="flex:2"><label>Label <span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:11px;color:var(--ink-soft)">short tag e.g. "Kitchen"</span></label><input id="task-edit-label" placeholder="e.g. Kitchen"></div>
+  </div>
+  <div class="form-group" style="margin-bottom:12px"><label>Task description</label><textarea id="task-edit-text" rows="2" placeholder="What needs to happen?"></textarea></div>
+  <input type="hidden" id="task-edit-id">
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-task')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Save</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════
+const DEFAULT_AUDIT_TASKS=[
+  {id:'a1',section:'audit',label:'Item Audit',task:'Photo every room — note hotspots, surfaces, problem areas. No sorting yet.'},
+  {id:'a2',section:'audit',label:'Item Audit',task:'Add every category to the Item Audit. Mark each: Keep, Donate, Sell, Discard, or Pending.'},
+  {id:'a3',section:'audit',label:'Item Audit',task:'For every Keep item, find a cell in the relevant room and link it. No cell = no home.'},
+];
+const DEFAULT_ROOM_TASKS=[
+  {id:'r1',section:'rooms',label:'Kitchen + Laundry',task:'High traffic, quick wins — sets the tone for the week.'},
+  {id:'r2',section:'rooms',label:'Living / Dining',task:'Visible space — motivating once done.'},
+  {id:'r3',section:'rooms',label:'Bathrooms + Study',task:'Small rooms, fast to complete.'},
+  {id:'r4',section:'rooms',label:'Bedrooms',task:'More personal — needs more decision-making time.'},
+  {id:'r5',section:'rooms',label:'Garage / Storage',task:'Last — absorbs overflow from all other rooms.'},
+  {id:'r6',section:'rooms',label:'Transit Zone',task:'Set up Return, Out, and Decide bins. Set weekly review day.'},
+];
+const DEFAULT_TASKS=[...DEFAULT_AUDIT_TASKS,...DEFAULT_ROOM_TASKS];
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function mkCell(id,content,type='assigned'){return{id,content,type,status:'todo',container:''};}
+function mkSpace(id,name,cols,rows,cells){
+  if(!cells)cells=Array.from({length:cols*rows},(_,i)=>mkCell(`${id}_c${i}`,'empty','empty'));
+  return{id,name,cols,rows,rowLabels:Array(rows).fill(''),colLabels:Array(cols).fill(''),_cellSize:90,cells};
+}
+
+// ═══════════════════════════════════════════════
+// DEFAULT DATA
+// ═══════════════════════════════════════════════
+const DEFAULT_ROOMS=[
+  {id:'hallway',name:'Hallway',icon:'🚪',spaces:[
+    mkSpace('hal_main','Hallway Cupboard',2,2,[
+      mkCell('hal1','empty','empty'),mkCell('hal2','empty','empty'),
+      mkCell('hal3','empty','empty'),mkCell('hal4','empty','empty'),
+    ]),
+  ]},
+  {id:'study',name:'Study',icon:'📚',spaces:[
+    mkSpace('st_main','Main Storage',3,3,[
+      mkCell('st1','empty','empty'),mkCell('st2','empty','empty'),mkCell('st3','empty','empty'),
+      mkCell('st4','empty','empty'),mkCell('st5','empty','empty'),mkCell('st6','empty','empty'),
+      mkCell('st7','empty','empty'),mkCell('st8','empty','empty'),mkCell('st9','empty','empty'),
+    ]),
+  ]},
+  {id:'bathroom',name:'Bathroom',icon:'🚿',spaces:[
+    mkSpace('ba_main','Vanity & Shelves',2,3,[
+      mkCell('ba1','empty','empty'),mkCell('ba2','empty','empty'),
+      mkCell('ba3','empty','empty'),mkCell('ba4','empty','empty'),
+      mkCell('ba5','empty','empty'),mkCell('ba6','empty','empty'),
+    ]),
+  ]},
+  {id:'bedroom1',name:'Bedroom 1',icon:'🛏',spaces:[
+    mkSpace('b1_wardrobe','Wardrobe',3,3,[
+      mkCell('b1_1','empty','empty'),mkCell('b1_2','empty','empty'),mkCell('b1_3','empty','empty'),
+      mkCell('b1_4','empty','empty'),mkCell('b1_5','empty','empty'),mkCell('b1_6','empty','empty'),
+      mkCell('b1_7','empty','empty'),mkCell('b1_8','empty','empty'),mkCell('b1_9','empty','empty'),
+    ]),
+  ]},
+  {id:'bedroom2',name:'Bedroom 2',icon:'🛏',spaces:[
+    mkSpace('b2_wardrobe','Wardrobe',3,3,[
+      mkCell('b2_1','empty','empty'),mkCell('b2_2','empty','empty'),mkCell('b2_3','empty','empty'),
+      mkCell('b2_4','empty','empty'),mkCell('b2_5','empty','empty'),mkCell('b2_6','empty','empty'),
+      mkCell('b2_7','empty','empty'),mkCell('b2_8','empty','empty'),mkCell('b2_9','empty','empty'),
+    ]),
+  ]},
+  {id:'bedroom3',name:'Bedroom 3',icon:'🛏',spaces:[
+    mkSpace('b3_wardrobe','Wardrobe',3,3,[
+      mkCell('b3_1','empty','empty'),mkCell('b3_2','empty','empty'),mkCell('b3_3','empty','empty'),
+      mkCell('b3_4','empty','empty'),mkCell('b3_5','empty','empty'),mkCell('b3_6','empty','empty'),
+      mkCell('b3_7','empty','empty'),mkCell('b3_8','empty','empty'),mkCell('b3_9','empty','empty'),
+    ]),
+  ]},
+  {id:'living',name:'Living Room',icon:'🛋',spaces:[
+    mkSpace('lv_main','Main Storage',3,3,[
+      mkCell('lv1','empty','empty'),mkCell('lv2','empty','empty'),mkCell('lv3','empty','empty'),
+      mkCell('lv4','empty','empty'),mkCell('lv5','empty','empty'),mkCell('lv6','empty','empty'),
+      mkCell('lv7','empty','empty'),mkCell('lv8','empty','empty'),mkCell('lv9','empty','empty'),
+    ]),
+  ]},
+  {id:'kitchen',name:'Kitchen',icon:'🍳',spaces:[
+    mkSpace('ki_upper','Upper Cupboards',3,2,[
+      mkCell('ki1','COOKWARE\ncookware set, wok, saucepan, oven mitts'),mkCell('ki2','empty','empty'),mkCell('ki3','empty','empty'),
+      mkCell('ki4','empty','empty'),mkCell('ki5','empty','empty'),mkCell('ki6','empty','empty'),
+    ]),
+    mkSpace('ki_lower','Lower Drawers & Cupboards',3,2,[
+      mkCell('ki7','empty','empty'),mkCell('ki8','CROCKERY\nplates, bowls, mugs, side plates'),mkCell('ki9','empty','empty'),
+      mkCell('ki10','empty','empty'),mkCell('ki11','empty','empty'),mkCell('ki12','empty','empty'),
+    ]),
+  ]},
+  {id:'laundry',name:'Laundry',icon:'🧺',spaces:[
+    mkSpace('la_upper','Upper Shelves',3,2,[
+      mkCell('la1','empty','empty'),mkCell('la2','empty','empty'),mkCell('la3','empty','empty'),
+      mkCell('la4','empty','empty'),mkCell('la5','empty','empty'),mkCell('la6','empty','empty'),
+    ]),
+    mkSpace('la_lower','Lower / Floor',3,2,[
+      mkCell('la7','empty','empty'),mkCell('la8','WASHING MACHINE','fixture'),mkCell('la9','DRYER','fixture'),
+      mkCell('la10','empty','empty'),mkCell('la11','empty','empty'),mkCell('la12','empty','empty'),
+    ]),
+  ]},
+];
+
+const DEFAULT_ITEMS=[
+  // Kitchen examples — assigned to cells to show how linking works
+  {id:'i_ex1',category:'COOKWARE',action:'keep',room:'Kitchen',items:'cookware set, wok, saucepan, oven mitts',assignedCellIds:[{roomId:'kitchen',spaceId:'ki_upper',cellId:'ki1'}]},
+  {id:'i_ex2',category:'CROCKERY',action:'keep',room:'Kitchen',items:'plates, bowls, mugs, side plates',assignedCellIds:[{roomId:'kitchen',spaceId:'ki_lower',cellId:'ki8'}]},
+  {id:'i_ex3',category:'UTENSILS',action:'keep',room:'Kitchen',items:'spatulas, tongs, ladle, peeler, grater',assignedCellIds:[]},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let S=loadState();
+let activeRoom=null;
+let roomView='grid';
+let dragSrc=null;
+let cellDragSrc=null;
+
+const STORAGE_KEY='ds4';
+function freshState(){
+  return{rooms:JSON.parse(JSON.stringify(DEFAULT_ROOMS)),items:JSON.parse(JSON.stringify(DEFAULT_ITEMS)),transit:[],containers:[],tasks:JSON.parse(JSON.stringify(DEFAULT_TASKS)),taskDone:{}};
+}
+function loadState(){
+  try{
+    const s=localStorage.getItem(STORAGE_KEY);
+    if(s){
+      const parsed=JSON.parse(s);
+      if(parsed.items) parsed.items.forEach(it=>{
+        if(!it.assignedCellIds)it.assignedCellIds=[];
+        if(it.category)it.category=it.category.toUpperCase();
+        if(it.items)it.items=it.items.toLowerCase();
+        if(it.action==='store'||it.action==='hang')it.action='keep';
+      });
+      if(!parsed.tasks)parsed.tasks=JSON.parse(JSON.stringify(DEFAULT_TASKS));
+      if(!parsed.taskDone)parsed.taskDone={};
+      return parsed;
+    }
+  }catch(e){}
+  return freshState();
+}
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(S));}catch(e){}
+  updateStats();
+}
+function resetToTemplate(){
+  if(!confirm('Reset everything back to the template? All your data will be cleared. This cannot be undone.'))return;
+  localStorage.removeItem(STORAGE_KEY);
+  S=freshState();
+  activeRoom=null;
+  save();buildSidebar();navigate('dashboard');toast('Reset to template');
+}
+
+// ═══════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════
+function navigate(page,roomId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(page==='room'&&roomId){
+    activeRoom=S.rooms.find(r=>r.id===roomId);
+    document.getElementById('page-room').classList.add('active');
+    document.querySelector(`[data-room="${roomId}"]`)?.classList.add('active');
+    renderRoomPage();
+    closeSidebar();
+  }else{
+    document.getElementById(`page-${page}`).classList.add('active');
+    document.querySelector(`[data-nav="${page}"]`)?.classList.add('active');
+    if(page==='items')renderItems();
+    if(page==='transit')renderTransit();
+    if(page==='dashboard')renderDashboard();
+    closeSidebar();
+  }
+}
+
+function buildSidebar(){
+  document.getElementById('room-nav').innerHTML=S.rooms.map(r=>`<div class="nav-item" data-room="${r.id}" onclick="navigate('room','${r.id}')"><span class="nav-icon">${r.icon}</span>${r.name}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function renderDashboard(){
+  document.getElementById('week-date').textContent=new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  if(!S.tasks)S.tasks=JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  if(!S.taskDone)S.taskDone={};
+
+  // Recommended flow block
+  const flowEl=document.getElementById('recommended-flow');
+  if(flowEl){
+    flowEl.innerHTML=`
+      <div style="display:flex;gap:0;align-items:stretch;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px;padding:12px 16px;border-right:1px solid var(--paper-dark)"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px">Step 1</div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Audit & Capture</div><div style="font-size:11.5px;color:var(--ink-soft)">Photo every room. Note hotspots. Don't move anything yet.</div></div>
+        <div style="flex:1;min-width:140px;padding:12px 16px;border-right:1px solid var(--paper-dark)"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px">Step 2</div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Sort & Decide</div><div style="font-size:11.5px;color:var(--ink-soft)">Add all categories to Item Audit. Assign every item an action.</div></div>
+        <div style="flex:1;min-width:140px;padding:12px 16px;border-right:1px solid var(--paper-dark)"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px">Step 3</div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Assign Homes</div><div style="font-size:11.5px;color:var(--ink-soft)">Open each room. Link Keep items to a specific cell. No cell = no home.</div></div>
+        <div style="flex:1;min-width:140px;padding:12px 16px"><div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px">Step 4</div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Transit Zone</div><div style="font-size:11.5px;color:var(--ink-soft)">Set up Return, Out, and Decide bins. Review weekly.</div></div>
+      </div>`;
+  }
+
+  const auditTasks=S.tasks.filter(t=>t.section==='audit');
+  const roomTasks=S.tasks.filter(t=>t.section==='rooms');
+
+  function renderTaskRow(t){
+    const done=!!S.taskDone[t.id];
+    return`<div class="day-row" style="gap:8px;align-items:flex-start;padding:10px 18px">
+      <div class="day-check ${done?'done':''}" onclick="toggleTask('${t.id}')" style="margin-top:1px;flex-shrink:0">${done?'✓':''}</div>
+      <div style="flex:1;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;min-width:0">
+        <div style="font-family:'DM Mono',monospace;font-size:10.5px;font-weight:600;color:var(--teal-dark);min-width:110px;padding-top:2px;flex-shrink:0">${t.label}</div>
+        <div style="flex:1;font-size:13px;${done?'color:var(--ink-soft);text-decoration:line-through':''}">${t.task}</div>
+      </div>
+      <div style="display:flex;gap:3px;flex-shrink:0;margin-top:1px">
+        <button onclick="openEditTask('${t.id}')" style="background:transparent;border:1px solid var(--paper-dark);color:var(--ink-soft);font-size:11px;padding:3px 7px;border-radius:4px;cursor:pointer;line-height:1" title="Edit">✏</button>
+        <button onclick="deleteTask('${t.id}')" style="background:transparent;border:1px solid var(--paper-dark);color:var(--ink-soft);font-size:11px;padding:3px 7px;border-radius:4px;cursor:pointer;line-height:1" title="Delete" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--ink-soft)'">✕</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('day-plan').innerHTML=`
+    <div style="padding:9px 18px 7px;background:var(--paper-warm);border-bottom:1px solid var(--paper-dark);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--teal-dark);font-weight:600">Item Audit</span>
+      <button onclick="openAddTask('audit')" style="background:transparent;border:1px dashed var(--teal);color:var(--teal-dark);font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Add task</button>
+    </div>
+    ${auditTasks.length?auditTasks.map(renderTaskRow).join(''):'<div style="padding:12px 18px;font-size:12px;color:var(--ink-soft);font-style:italic">No tasks — add one above</div>'}
+    <div style="padding:9px 18px 7px;background:var(--paper-warm);border-bottom:1px solid var(--paper-dark);border-top:1px solid var(--paper-dark);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--teal-dark);font-weight:600">Room Reorganisation</span>
+      <button onclick="openAddTask('rooms')" style="background:transparent;border:1px dashed var(--teal);color:var(--teal-dark);font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Add task</button>
+    </div>
+    ${roomTasks.length?roomTasks.map(renderTaskRow).join(''):'<div style="padding:12px 18px;font-size:12px;color:var(--ink-soft);font-style:italic">No tasks — add one above</div>'}
+  `;
+  updateStats();
+}
+
+function toggleTask(id){
+  if(!S.taskDone)S.taskDone={};
+  S.taskDone[id]=!S.taskDone[id];
+  save();renderDashboard();
+}
+function openAddTask(section){
+  document.getElementById('task-modal-title').textContent='Add Task';
+  document.getElementById('task-edit-id').value='';
+  document.getElementById('task-edit-section').value=section;
+  document.getElementById('task-edit-label').value='';
+  document.getElementById('task-edit-text').value='';
+  openModal('modal-task');
+}
+function openEditTask(id){
+  const t=S.tasks.find(t=>t.id===id);if(!t)return;
+  document.getElementById('task-modal-title').textContent='Edit Task';
+  document.getElementById('task-edit-id').value=id;
+  document.getElementById('task-edit-section').value=t.section;
+  document.getElementById('task-edit-label').value=t.label;
+  document.getElementById('task-edit-text').value=t.task;
+  openModal('modal-task');
+}
+function saveTask(){
+  const id=document.getElementById('task-edit-id').value;
+  const section=document.getElementById('task-edit-section').value;
+  const label=document.getElementById('task-edit-label').value.trim();
+  const task=document.getElementById('task-edit-text').value.trim();
+  if(!label||!task)return toast('Label and task description are required');
+  if(id){
+    const t=S.tasks.find(t=>t.id===id);
+    if(t){t.label=label;t.task=task;t.section=section;}
+  }else{
+    S.tasks.push({id:'t'+Date.now(),section,label,task});
+  }
+  save();closeModal('modal-task');renderDashboard();toast(id?'Task updated':'Task added');
+}
+function deleteTask(id){
+  if(!confirm('Delete this task?'))return;
+  S.tasks=S.tasks.filter(t=>t.id!==id);
+  if(S.taskDone)delete S.taskDone[id];
+  save();renderDashboard();toast('Task deleted');
+}
+
+// ═══════════════════════════════════════════════
+// ROOM PAGE
+// ═══════════════════════════════════════════════
+function renderRoomPage(){
+  if(!activeRoom)return;
+  document.getElementById('room-page-title').textContent=activeRoom.icon+' '+activeRoom.name;
+  setRoomView(roomView,true);
+}
+
+function renameRoom(e){
+  if(!activeRoom)return;
+  const h2=e.currentTarget;
+  const inp=document.createElement('input');
+  inp.value=activeRoom.name;
+  inp.style.cssText='font-family:"DM Serif Display",serif;font-size:25px;letter-spacing:-.03em;border:none;border-bottom:2px solid var(--teal);outline:none;background:transparent;width:320px;color:var(--ink)';
+  const done=()=>{
+    const v=inp.value.trim();
+    if(v){activeRoom.name=v;}
+    h2.textContent=activeRoom.icon+' '+activeRoom.name;
+    inp.replaceWith(h2);
+    save();buildSidebar();
+    // re-highlight active nav item
+    document.querySelectorAll('[data-room]').forEach(el=>el.classList.toggle('active',el.dataset.room===activeRoom.id));
+    toast('Room renamed');
+  };
+  inp.onblur=done;
+  inp.onkeydown=ev=>{if(ev.key==='Enter')done();if(ev.key==='Escape'){inp.replaceWith(h2);}};
+  h2.replaceWith(inp);inp.focus();inp.select();
+}
+
+function setRoomView(v,force){
+  if(v===roomView&&!force)return;
+  roomView=v;
+  document.getElementById('vbtn-grid').classList.toggle('active',v==='grid');
+  document.getElementById('vbtn-list').classList.toggle('active',v==='list');
+  document.getElementById('room-grid-view').style.display=v==='grid'?'block':'none';
+  document.getElementById('room-list-view').style.display=v==='list'?'block':'none';
+  if(v==='grid')renderSpacesGrid();else renderSpacesList();
+}
+
+// ─── GRID ──────────────────────────────────────
+function renderSpacesGrid(){
+  if(!activeRoom)return;
+  const wrap=document.getElementById('spaces-container');
+  wrap.innerHTML='';
+  activeRoom.spaces.forEach(sp=>wrap.appendChild(buildSpaceCard(sp)));
+  initDragDrop();
+}
+
+function buildSpaceCard(sp){
+  const card=document.createElement('div');
+  card.className='space-card';
+  card.dataset.spaceId=sp.id;
+
+  // header
+  const hdr=document.createElement('div');
+  hdr.className='space-header';
+  hdr.innerHTML=`<span class="drag-handle" title="Drag to reorder">⠿</span>
+    <span class="space-name-display" ondblclick="renameSpace(event,'${sp.id}')">${sp.name}</span>
+    <span class="space-meta">${sp.cols}×${sp.rows} · ${sp.cells.filter(c=>c.type!=='empty').length} used</span>
+    <div class="space-actions">
+      <button class="sab" onclick="toggleCfg('${sp.id}')">⚙ Configure</button>
+      <button class="sab" onclick="addCellToSpace('${sp.id}')">+ Cell</button>
+      <button class="sab d" onclick="deleteSpace('${sp.id}')">✕ Delete</button>
+    </div>`;
+  card.appendChild(hdr);
+
+  // config bar
+  const cfg=document.createElement('div');
+  cfg.className='grid-config-bar';
+  cfg.id='cfg-'+sp.id;
+  cfg.innerHTML=`<label>Columns <input type="number" min="1" max="12" value="${sp.cols}" onchange="resizeSp('${sp.id}','cols',this.value)"></label>
+    <label>Rows <input type="number" min="1" max="16" value="${sp.rows}" onchange="resizeSp('${sp.id}','rows',this.value)"></label>
+    <label>Cell height
+      <select onchange="setCellH('${sp.id}',this.value)">
+        <option value="60"${sp._cellSize===60?' selected':''}>Compact</option>
+        <option value="90"${(!sp._cellSize||sp._cellSize===90)?' selected':''}>Normal</option>
+        <option value="120"${sp._cellSize===120?' selected':''}>Tall</option>
+        <option value="150"${sp._cellSize===150?' selected':''}>Extra tall</option>
+      </select>
+    </label>
+    <button class="btn btn-ghost btn-xs" onclick="toggleCfg('${sp.id}')">Done</button>`;
+  card.appendChild(cfg);
+
+  // grid wrap
+  const gw=document.createElement('div');
+  gw.className='space-grid-wrap';
+  const h=sp._cellSize||90;
+  const cols=sp.cols;
+
+  // col labels
+  const clRow=document.createElement('div');
+  clRow.style.cssText=`display:grid;grid-template-columns:88px repeat(${cols},1fr);gap:4px;margin-bottom:4px`;
+  clRow.appendChild(document.createElement('div'));// spacer for row label col
+  for(let c=0;c<cols;c++){
+    const cl=document.createElement('div');
+    cl.className='col-label';
+    cl.textContent=sp.colLabels[c]||(c+1);
+    cl.title='Click to rename';
+    cl.onclick=()=>openLabelModal('col',activeRoom.id,sp.id,c);
+    clRow.appendChild(cl);
+  }
+  gw.appendChild(clRow);
+
+  // rows
+  const rowsWrap=document.createElement('div');
+  rowsWrap.style.display='flex';rowsWrap.style.gap='4px';
+
+  const rlCol=document.createElement('div');
+  rlCol.style.cssText=`display:flex;flex-direction:column;gap:4px;width:88px;flex-shrink:0`;
+
+  const cellArea=document.createElement('div');
+  cellArea.className='cell-grid';
+  cellArea.style.cssText=`grid-template-columns:repeat(${cols},1fr);flex:1`;
+
+  for(let r=0;r<sp.rows;r++){
+    const rl=document.createElement('div');
+    rl.className='row-label';
+    rl.style.height=h+'px';
+    rl.textContent=sp.rowLabels[r]||`Row ${r+1}`;
+    rl.title='Click to rename';
+    rl.onclick=()=>openLabelModal('row',activeRoom.id,sp.id,r);
+    rlCol.appendChild(rl);
+
+    for(let c=0;c<cols;c++){
+      const idx=r*cols+c;
+      const cell=sp.cells[idx];
+      if(cell){
+        const el=document.createElement('div');
+        el.className=`storage-cell type-${cell.type}`;
+        el.style.minHeight=h+'px';
+        el.dataset.cellId=cell.id;
+        el.dataset.spaceId=sp.id;
+        el.dataset.cellIdx=idx;
+        // drag handle — shown on hover via CSS
+        const dh=document.createElement('span');
+        dh.className='cell-drag-handle';
+        dh.textContent='⠿';
+        dh.title='Drag to reorder';
+        el.appendChild(dh);
+        const contentDiv=document.createElement('div');
+        contentDiv.innerHTML=`<div class="cell-status-dot ${cell.status}"></div><div class="cell-content-text">${cell.content.replace(/\n/g,'<br>')}</div>${cell.container?`<div class="cell-container-tag">📦 ${cell.container}</div>`:''}`;
+        el.appendChild(contentDiv);
+        // click to edit (but not when dragging)
+        el.addEventListener('click',ev=>{if(!el.classList.contains('cell-dragging'))openEditCell(activeRoom.id,sp.id,cell.id);});
+        // drag events
+        dh.addEventListener('mousedown',()=>{el.draggable=true;});
+        dh.addEventListener('mouseup',()=>{el.draggable=false;});
+        el.addEventListener('dragstart',ev=>{
+          ev.stopPropagation();
+          cellDragSrc={spId:sp.id,cellId:cell.id,idx};
+          el.classList.add('cell-dragging');
+          ev.dataTransfer.effectAllowed='move';
+        });
+        el.addEventListener('dragend',ev=>{
+          ev.stopPropagation();
+          el.classList.remove('cell-dragging');
+          el.draggable=false;
+          document.querySelectorAll('.storage-cell').forEach(c=>c.classList.remove('cell-drag-over'));
+        });
+        el.addEventListener('dragover',ev=>{
+          ev.preventDefault();ev.stopPropagation();
+          if(cellDragSrc&&el.dataset.cellId!==cellDragSrc.cellId)el.classList.add('cell-drag-over');
+        });
+        el.addEventListener('dragleave',ev=>{ev.stopPropagation();el.classList.remove('cell-drag-over');});
+        el.addEventListener('drop',ev=>{
+          ev.preventDefault();ev.stopPropagation();
+          el.classList.remove('cell-drag-over');
+          if(!cellDragSrc||el.dataset.cellId===cellDragSrc.cellId)return;
+          // only swap within same space
+          if(el.dataset.spaceId!==cellDragSrc.spId)return toast('Cells can only be moved within the same space');
+          const sp2=findSp(cellDragSrc.spId);if(!sp2)return;
+          const si=sp2.cells.findIndex(c=>c.id===cellDragSrc.cellId);
+          const di=parseInt(el.dataset.cellIdx);
+          if(si>-1&&di>-1){const tmp=sp2.cells[si];sp2.cells[si]=sp2.cells[di];sp2.cells[di]=tmp;}
+          cellDragSrc=null;
+          save();renderSpacesGrid();
+        });
+        cellArea.appendChild(el);
+      }else{
+        const g=document.createElement('div');
+        g.className='add-cell-ghost';
+        g.style.minHeight=h+'px';
+        g.textContent='+';
+        g.onclick=()=>addCellAt(sp.id,idx);
+        cellArea.appendChild(g);
+      }
+    }
+  }
+  // trailing + ghost
+  const tg=document.createElement('div');
+  tg.className='add-cell-ghost';
+  tg.style.minHeight=h+'px';
+  tg.textContent='+';
+  tg.onclick=()=>addCellToSpace(sp.id);
+  cellArea.appendChild(tg);
+  const rlPad=document.createElement('div');
+  rlPad.style.height=h+'px';
+  rlCol.appendChild(rlPad);
+
+  rowsWrap.appendChild(rlCol);
+  rowsWrap.appendChild(cellArea);
+  gw.appendChild(rowsWrap);
+  card.appendChild(gw);
+  return card;
+}
+
+function toggleCfg(spId){document.getElementById('cfg-'+spId)?.classList.toggle('open');}
+
+function renameSpace(e,spId){
+  const sp=findSp(spId);if(!sp)return;
+  const el=e.currentTarget;
+  const inp=document.createElement('input');
+  inp.className='space-name-input';
+  inp.value=sp.name;
+  const done=()=>{sp.name=inp.value.trim()||sp.name;save();renderSpacesGrid();};
+  inp.onblur=done;
+  inp.onkeydown=ev=>{if(ev.key==='Enter')done();if(ev.key==='Escape'){inp.replaceWith(el);}};
+  el.replaceWith(inp);inp.focus();inp.select();
+}
+
+// ─── LIST VIEW ──────────────────────────────────
+function renderSpacesList(){
+  if(!activeRoom)return;
+  const out=document.getElementById('room-list-view');
+  out.innerHTML=activeRoom.spaces.map(sp=>`
+    <div class="list-table">
+      <div class="list-table-header"><h3>${sp.name}</h3><span style="font-size:11.5px;color:var(--ink-soft)">${sp.cells.filter(c=>c.type!=='empty').length} assigned cells</span></div>
+      <table><thead><tr><th>Contents</th><th>Type</th><th>Container</th><th>Status</th></tr></thead>
+      <tbody>${sp.cells.filter(c=>c.type!=='empty').map(c=>`
+        <tr onclick="openEditCell('${activeRoom.id}','${sp.id}','${c.id}')">
+          <td>${c.content.replace(/\n/g,', ')}</td>
+          <td>${c.type}</td>
+          <td>${c.container||'<span style="color:var(--ink-soft);font-style:italic">—</span>'}</td>
+          <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c.status==='done'?'var(--green)':c.status==='inprogress'?'var(--amber)':'#ccc'};margin-right:5px"></span>${c.status}</td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// SPACE CRUD
+// ═══════════════════════════════════════════════
+function openAddSpaceModal(){openModal('modal-space');}
+function addSpace(){
+  if(!activeRoom)return;
+  const name=document.getElementById('ns-name').value.trim();
+  if(!name)return toast('Enter a name');
+  const cols=Math.max(1,parseInt(document.getElementById('ns-cols').value)||3);
+  const rows=Math.max(1,parseInt(document.getElementById('ns-rows').value)||3);
+  const id='sp_'+Date.now();
+  activeRoom.spaces.push(mkSpace(id,name,cols,rows));
+  save();closeModal('modal-space');
+  document.getElementById('ns-name').value='';
+  renderRoomPage();toast('Space added');
+}
+function deleteSpace(spId){
+  if(!activeRoom)return;
+  if(!confirm('Delete this space and all its cells?'))return;
+  activeRoom.spaces=activeRoom.spaces.filter(s=>s.id!==spId);
+  save();renderRoomPage();toast('Space deleted');
+}
+function resizeSp(spId,dim,val){
+  const sp=findSp(spId);if(!sp)return;
+  const n=Math.max(1,parseInt(val)||1);
+  if(dim==='cols'){sp.cols=n;sp.colLabels=Array(n).fill('').map((_,i)=>sp.colLabels[i]||'');}
+  else{sp.rows=n;sp.rowLabels=Array(n).fill('').map((_,i)=>sp.rowLabels[i]||'');}
+  const needed=sp.cols*sp.rows;
+  while(sp.cells.length<needed)sp.cells.push(mkCell(`${spId}_c${sp.cells.length}`,'empty','empty'));
+  save();renderSpacesGrid();
+}
+function setCellH(spId,val){const sp=findSp(spId);if(!sp)return;sp._cellSize=parseInt(val);save();renderSpacesGrid();}
+function addCellToSpace(spId){
+  const sp=findSp(spId);if(!sp)return;
+  sp.cells.push(mkCell(`${spId}_c${Date.now()}`,'new item','assigned'));
+  sp.rows=Math.ceil(sp.cells.length/sp.cols);
+  sp.rowLabels=Array(sp.rows).fill('').map((_,i)=>sp.rowLabels[i]||'');
+  save();renderSpacesGrid();
+}
+function addCellAt(spId,idx){
+  const sp=findSp(spId);if(!sp)return;
+  sp.cells[idx]=mkCell(`${spId}_c${Date.now()}`,'new item','assigned');
+  save();renderSpacesGrid();
+  openEditCell(activeRoom.id,spId,sp.cells[idx].id);
+}
+
+// ═══════════════════════════════════════════════
+// CELL EDIT
+// ═══════════════════════════════════════════════
+function openEditCell(roomId,spId,cellId){
+  const sp=findSpInRoom(roomId,spId);if(!sp)return;
+  const cell=sp.cells.find(c=>c.id===cellId);if(!cell)return;
+  document.getElementById('cell-content').value=cell.content;
+  document.getElementById('cell-content').readOnly=false;
+  document.getElementById('cell-content-note').textContent='';
+  document.getElementById('cell-status').value=cell.status;
+  document.getElementById('edit-room-id').value=roomId;
+  document.getElementById('edit-space-id').value=spId;
+  document.getElementById('edit-cell-id').value=cellId;
+  document.getElementById('modal-cell-sub').textContent=sp.name+(activeRoom?' · '+activeRoom.name:'');
+  // populate linked items checklist
+  const linkBox=document.getElementById('cell-item-links');
+  const storeItems=S.items.filter(i=>!OUT_ACTIONS.includes(i.action));
+  if(!storeItems.length){
+    linkBox.innerHTML='<span style="font-size:12px;color:var(--ink-soft);font-style:italic">No audit items to link — add items in Item Audit first</span>';
+  }else{
+    linkBox.innerHTML=storeItems.map(it=>{
+      const linked=it.assignedCellIds&&it.assignedCellIds.some(r=>r.cellId===cellId);
+      return`<label class="item-link-check">
+        <input type="checkbox" value="${it.id}" ${linked?'checked':''} onchange="syncCellContentFromItems()">
+        <span style="flex:1">${it.category}${it.items?`<span style="color:var(--ink-soft);font-size:10.5px;margin-left:6px">${it.items}</span>`:''}
+        </span>
+      </label>`;
+    }).join('');
+  }
+  // trigger readonly state if items already linked
+  syncCellContentFromItems(cell.content);
+  openModal('modal-cell');
+}
+
+function syncCellContentFromItems(existingContent){
+  const checked=[...document.querySelectorAll('#cell-item-links input[type=checkbox]:checked')];
+  const contentEl=document.getElementById('cell-content');
+  const noteEl=document.getElementById('cell-content-note');
+  if(!checked.length){
+    contentEl.readOnly=false;
+    noteEl.textContent='';
+    return;
+  }
+  const lines=checked.map(cb=>{
+    const item=S.items.find(i=>i.id===cb.value);
+    if(!item)return null;
+    const sub=item.items?item.items.split(',').map(s=>s.trim()).filter(Boolean):[];
+    return[item.category,...sub].join('\n');
+  }).filter(Boolean);
+  contentEl.value=lines.join('\n');
+  contentEl.readOnly=true;
+  noteEl.textContent='— auto-filled from linked items';
+}
+
+function saveCell(){
+  const roomId=document.getElementById('edit-room-id').value;
+  const spId=document.getElementById('edit-space-id').value;
+  const cellId=document.getElementById('edit-cell-id').value;
+  const sp=findSpInRoom(roomId,spId);if(!sp)return;
+  const cell=sp.cells.find(c=>c.id===cellId);if(!cell)return;
+  cell.content=document.getElementById('cell-content').value;
+  const newStatus=document.getElementById('cell-status').value;
+  cell.status=newStatus;
+  // derive cell type from content
+  if(!cell.content||cell.content==='empty')cell.type='empty';
+  else if(cell.type==='empty'||cell.type==='tbc')cell.type='assigned';
+  // sync item links: first remove this cell from all items, then re-add checked ones
+  S.items.forEach(it=>{
+    if(it.assignedCellIds) it.assignedCellIds=it.assignedCellIds.filter(r=>r.cellId!==cellId);
+  });
+  document.querySelectorAll('#cell-item-links input[type=checkbox]:checked').forEach(cb=>{
+    const item=S.items.find(i=>i.id===cb.value);
+    if(item){
+      if(!item.assignedCellIds)item.assignedCellIds=[];
+      if(!item.assignedCellIds.some(r=>r.cellId===cellId)){
+        item.assignedCellIds.push({roomId,spaceId:spId,cellId});
+      }
+    }
+  });
+  save();closeModal('modal-cell');renderRoomPage();toast('Saved');
+}
+
+function deleteCell(){
+  const roomId=document.getElementById('edit-room-id').value;
+  const spId=document.getElementById('edit-space-id').value;
+  const cellId=document.getElementById('edit-cell-id').value;
+  const sp=findSpInRoom(roomId,spId);if(!sp)return;
+  if(!confirm('Delete this cell?'))return;
+  // unlink from items
+  unlinkCellFromItems(roomId,spId,cellId);
+  const idx=sp.cells.findIndex(c=>c.id===cellId);
+  if(idx>-1)sp.cells.splice(idx,1,mkCell(`${spId}_empty_${Date.now()}`,'empty','empty'));
+  save();closeModal('modal-cell');renderRoomPage();toast('Cell cleared');
+}
+
+// ═══════════════════════════════════════════════
+// LABELS
+// ═══════════════════════════════════════════════
+function openLabelModal(type,roomId,spId,idx){
+  const sp=findSpInRoom(roomId,spId);if(!sp)return;
+  const cur=type==='row'?(sp.rowLabels[idx]||''):(sp.colLabels[idx]||'');
+  document.getElementById('modal-label-title').textContent=type==='row'?`Rename Row ${idx+1}`:`Rename Column ${idx+1}`;
+  document.getElementById('label-input').value=cur;
+  document.getElementById('label-type').value=type;
+  document.getElementById('label-room-id').value=roomId;
+  document.getElementById('label-space-id').value=spId;
+  document.getElementById('label-index').value=idx;
+  openModal('modal-label');
+}
+function saveLabel(){
+  const type=document.getElementById('label-type').value;
+  const sp=findSpInRoom(document.getElementById('label-room-id').value,document.getElementById('label-space-id').value);
+  if(!sp)return;
+  const idx=parseInt(document.getElementById('label-index').value);
+  const val=document.getElementById('label-input').value.trim();
+  if(type==='row')sp.rowLabels[idx]=val;else sp.colLabels[idx]=val;
+  save();closeModal('modal-label');renderSpacesGrid();
+}
+
+// ═══════════════════════════════════════════════
+// DRAG & DROP — space reorder
+// ═══════════════════════════════════════════════
+function initDragDrop(){
+  document.querySelectorAll('.space-card').forEach(card=>{
+    const handle=card.querySelector('.drag-handle');
+    handle.addEventListener('mousedown',()=>{card.draggable=true;});
+    handle.addEventListener('mouseup',()=>{card.draggable=false;});
+    card.addEventListener('dragstart',e=>{if(cellDragSrc)return;dragSrc=card;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');card.draggable=false;document.querySelectorAll('.space-card').forEach(c=>c.classList.remove('drag-over'));});
+    card.addEventListener('dragover',e=>{e.preventDefault();if(card!==dragSrc)card.classList.add('drag-over');});
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(!dragSrc||card===dragSrc)return;
+      const spaces=activeRoom.spaces;
+      const si=spaces.findIndex(s=>s.id===dragSrc.dataset.spaceId);
+      const di=spaces.findIndex(s=>s.id===card.dataset.spaceId);
+      if(si>-1&&di>-1){const[sp]=spaces.splice(si,1);spaces.splice(di,0,sp);}
+      save();renderSpacesGrid();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ASSIGNMENT HELPERS
+// ═══════════════════════════════════════════════
+const OUT_ACTIONS=['sell','donate','discard','return'];
+
+function getItemStatus(item){
+  if(OUT_ACTIONS.includes(item.action))return'out';
+  if(item.assignedCellIds&&item.assignedCellIds.length)return'assigned';
+  return'unassigned';
+}
+
+function getItemAssignmentLabel(item){
+  if(!item.assignedCellIds||!item.assignedCellIds.length)return null;
+  return item.assignedCellIds.map(ref=>{
+    const room=S.rooms.find(r=>r.id===ref.roomId);
+    if(!room)return null;
+    const sp=room.spaces.find(s=>s.id===ref.spaceId);
+    if(!sp)return null;
+    return`${room.icon} ${room.name} › ${sp.name}`;
+  }).filter(Boolean);
+}
+
+// Remove a cell reference from all items that link to it
+function unlinkCellFromItems(roomId,spaceId,cellId){
+  S.items.forEach(it=>{
+    if(it.assignedCellIds){
+      it.assignedCellIds=it.assignedCellIds.filter(r=>!(r.roomId===roomId&&r.spaceId===spaceId&&r.cellId===cellId));
+    }
+  });
+}
+
+function updateStats(){
+  const total=S.items.length;
+  const assigned=S.items.filter(i=>getItemStatus(i)==='assigned').length;
+  const out=S.items.filter(i=>getItemStatus(i)==='out').length;
+  const unassigned=total-assigned-out;
+  const placeable=total-out;
+  const pct=placeable>0?Math.round(assigned/placeable*100):0;
+
+  document.getElementById('stat-rooms').textContent=S.rooms.length;
+  document.getElementById('stat-transit').textContent=S.transit.length;
+  const totalTasks=(S.tasks||[]).length;
+  const doneTasks=Object.values(S.taskDone||{}).filter(Boolean).length;
+  document.getElementById('stat-days').textContent=doneTasks+'/'+totalTasks;
+  document.getElementById('transit-count').textContent=S.transit.length;
+
+  if(!total){
+    document.getElementById('stat-assigned').textContent='—';
+    document.getElementById('stat-assigned-sub').textContent='Audit not started';
+    document.getElementById('stat-unassigned').textContent='—';
+  }else{
+    document.getElementById('stat-assigned').textContent=assigned;
+    document.getElementById('stat-assigned-sub').textContent=`of ${placeable} to place`;
+    document.getElementById('stat-unassigned').textContent=unassigned;
+  }
+
+  // progress bar
+  const w=(n)=>total>0?(n/total*100).toFixed(1)+'%':'0%';
+  const pa=document.getElementById('prog-assigned');
+  const po=document.getElementById('prog-out');
+  if(pa){pa.style.width=w(assigned);if(po)po.style.width=w(out);document.getElementById('prog-pct').textContent=pct;}
+
+  // unassigned list on dashboard
+  const ul=document.getElementById('unassigned-list');
+  if(ul){
+    if(!total){
+      ul.innerHTML='<div style="font-size:12px;color:var(--ink-soft);font-style:italic">Audit not started — add your first items in the Item Audit to begin.</div>';
+      return;
+    }
+    const items=S.items.filter(i=>getItemStatus(i)==='unassigned');
+    if(!items.length){ul.innerHTML='<div style="font-size:12px;color:var(--green);font-weight:600">✓ All items have a home assigned</div>';return;}
+    ul.innerHTML=`<div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:6px">⚠ ${items.length} item${items.length>1?'s':''} still need${items.length===1?'s':''} a home:</div>`
+      +items.map(it=>`<span onclick="navigate('items')" style="display:inline-block;background:var(--red-light);color:var(--red);border-radius:5px;padding:2px 9px;font-size:11.5px;margin:2px;cursor:pointer">${it.category}</span>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function findSp(spId){return activeRoom?activeRoom.spaces.find(s=>s.id===spId)||null:null;}
+function findSpInRoom(roomId,spId){const r=S.rooms.find(r=>r.id===roomId);return r?r.spaces.find(s=>s.id===spId)||null:null;}
+
+// ═══════════════════════════════════════════════
+// ROOMS
+// ═══════════════════════════════════════════════
+function openAddRoomModal(){openModal('modal-room');}
+function deleteRoom(){
+  if(!activeRoom)return;
+  if(!confirm(`Delete "${activeRoom.name}" and all its spaces and cells? This cannot be undone.`))return;
+  S.rooms=S.rooms.filter(r=>r.id!==activeRoom.id);
+  activeRoom=null;
+  save();buildSidebar();navigate('dashboard');toast('Room deleted');
+}
+function addRoom(){
+  const name=document.getElementById('nr-name').value.trim();if(!name)return toast('Enter a name');
+  const id='room_'+Date.now();
+  S.rooms.push({id,name,icon:document.getElementById('nr-icon').value||'🏠',spaces:[]});
+  save();buildSidebar();closeModal('modal-room');
+  ['nr-name','nr-icon'].forEach(i=>document.getElementById(i).value='');
+  navigate('room',id);toast('Room added');
+}
+
+
+// ═══════════════════════════════════════════════
+// ITEMS
+// ═══════════════════════════════════════════════
+function renderItems(){
+  const el=document.getElementById('items-list');
+  // summary bar
+  const sb=document.getElementById('items-summary-bar');
+  const total=S.items.length;
+  const assigned=S.items.filter(i=>getItemStatus(i)==='assigned').length;
+  const out=S.items.filter(i=>getItemStatus(i)==='out').length;
+  const unassigned=total-assigned-out;
+  if(sb) sb.innerHTML=`
+    <div style="background:var(--green-light);color:var(--green);border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:600;flex:1;text-align:center">${assigned} Assigned</div>
+    <div style="background:var(--red-light);color:var(--red);border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:600;flex:1;text-align:center">${unassigned} Needs a home</div>
+    <div style="background:var(--amber-light);color:var(--amber);border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:600;flex:1;text-align:center">${out} Out (sell/donate/discard)</div>`;
+  if(!S.items.length){el.innerHTML='<div style="text-align:center;padding:36px;color:var(--ink-soft);font-style:italic">No items yet</div>';return;}
+  el.innerHTML=S.items.map(it=>{
+    const status=getItemStatus(it);
+    const labels=getItemAssignmentLabel(it);
+    const assignmentHtml=status==='assigned'&&labels
+      ?`<div class="item-assignment-detail">📍 ${labels.map(l=>`<span class="cell-link-pill">${l}</span>`).join('')}</div>`
+      :status==='unassigned'&&!OUT_ACTIONS.includes(it.action)
+      ?`<div class="item-assignment-detail" style="color:var(--red)">⚠ No cell assigned yet — open a room cell and link this item</div>`
+      :``;
+    return`<div class="item-card ${status}-item" onclick="openEditItem('${it.id}')" style="cursor:pointer">
+      <div class="item-card-main">
+        <div class="item-category">${it.category}</div>
+        <div class="item-contents" style="flex:2">${it.items||'—'}</div>
+        <span class="tag tag-${it.action}">${it.action}</span>
+        <span class="assign-badge ${status}">${status==='assigned'?'✓ Assigned':status==='out'?'→ Out':'⚠ Unplaced'}</span>
+      </div>
+      ${assignmentHtml}
+    </div>`;
+  }).join('');
+}
+function toggleAddItem(){const f=document.getElementById('add-item-form');f.style.display=f.style.display==='none'?'block':'none';}
+function addItem(){
+  const cat=document.getElementById('new-cat').value.trim().toUpperCase();
+  if(!cat)return toast('Enter a category');
+  const its=document.getElementById('new-items-list').value.toLowerCase();
+  S.items.push({id:'i'+Date.now(),category:cat,action:document.getElementById('new-action').value,room:'',items:its,assignedCellIds:[]});
+  save();toggleAddItem();renderItems();
+  ['new-cat','new-items-list'].forEach(i=>document.getElementById(i).value='');toast('Added');
+}
+function openEditItem(id){
+  const item=S.items.find(i=>i.id===id);if(!item)return;
+  document.getElementById('ei-id').value=id;
+  document.getElementById('ei-category').value=item.category;
+  document.getElementById('ei-action').value=item.action;
+  document.getElementById('ei-items').value=item.items||'';
+  document.getElementById('edit-item-sub').textContent=`Editing: ${item.category}`;
+  openModal('modal-edit-item');
+}
+function saveItem(){
+  const id=document.getElementById('ei-id').value;
+  const item=S.items.find(i=>i.id===id);if(!item)return;
+  item.category=(document.getElementById('ei-category').value.trim()||item.category).toUpperCase();
+  item.action=document.getElementById('ei-action').value;
+  item.items=document.getElementById('ei-items').value.toLowerCase();
+  save();closeModal('modal-edit-item');renderItems();toast('Item updated');
+}
+function deleteItem(){
+  const id=document.getElementById('ei-id').value;
+  if(!id)return;
+  if(!confirm('Remove this item from the audit? Any cell assignments will also be cleared.'))return;
+  // Clear this item from all room cells
+  S.rooms.forEach(room=>{
+    room.spaces.forEach(sp=>{
+      sp.cells.forEach(cell=>{
+        if(cell.assignedItemIds){
+          cell.assignedItemIds=cell.assignedItemIds.filter(iid=>iid!==id);
+        }
+      });
+    });
+  });
+  // Also clear the item's cell references from the cell content if it was the only linked item
+  S.rooms.forEach(room=>{
+    room.spaces.forEach(sp=>{
+      sp.cells.forEach(cell=>{
+        // find any cell that had this item linked via assignedCellIds on the item side
+        const item=S.items.find(i=>i.id===id);
+        if(item&&item.assignedCellIds){
+          item.assignedCellIds.forEach(ref=>{
+            const sp2=S.rooms.flatMap(r=>r.spaces).find(s=>s.id===ref.spaceId);
+            if(sp2){
+              const linkedCell=sp2.cells.find(c=>c.id===ref.cellId);
+              if(linkedCell){
+                // check if this was the only item linked to the cell
+                const otherLinkedItems=S.items.filter(i=>i.id!==id&&i.assignedCellIds&&i.assignedCellIds.some(r=>r.cellId===ref.cellId));
+                if(!otherLinkedItems.length){
+                  // clear the auto-filled content since no items remain linked
+                  linkedCell.content='empty';
+                  linkedCell.type='empty';
+                }
+              }
+            }
+          });
+        }
+      });
+    });
+  });
+  S.items=S.items.filter(i=>i.id!==id);
+  save();closeModal('modal-edit-item');renderItems();toast('Item removed');
+}
+
+// ═══════════════════════════════════════════════
+// TRANSIT
+// ═══════════════════════════════════════════════
+function renderTransit(){
+  ['return','out','decide'].forEach(bin=>{
+    const el=document.getElementById('bin-'+bin);
+    const its=S.transit.filter(t=>t.bin===bin);
+    if(!its.length){el.innerHTML='<div style="color:var(--ink-soft);font-size:11px;font-style:italic;padding:6px">Empty</div>';return;}
+    el.innerHTML=its.map(t=>{const d=Math.floor((Date.now()-new Date(t.date))/86400000);const lim=bin==='out'?28:14;return`<div class="transit-item ${d>lim?'overdue':''}" onclick="resolveTransit('${t.id}')"><div class="transit-item-name">${t.name}</div><div class="transit-item-date">${d}d ${d>lim?'⚠':''}</div></div>`;}).join('');
+  });
+  const tb=document.getElementById('transit-tbody');
+  if(!S.transit.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--ink-soft);font-style:italic">No items</td></tr>';return;}
+  tb.innerHTML=S.transit.map(t=>{
+    const din=new Date(t.date);const lim=t.bin==='out'?28:14;
+    const dead=new Date(din.getTime()+lim*86400000);const left=Math.ceil((dead-Date.now())/86400000);
+    return`<tr onclick="resolveTransit('${t.id}')"><td><span class="tag tag-${t.bin==='return'?'hang':t.bin==='out'?'sell':'donate'}">${t.bin}</span></td><td>${t.name}</td><td>${din.toLocaleDateString('en-AU')}</td><td style="${left<0?'color:var(--red);font-weight:600':''}">${left<0?'OVERDUE':dead.toLocaleDateString('en-AU')}</td><td>${left<0?'⚠ Overdue':left+'d left'}</td></tr>`;
+  }).join('');
+}
+function openAddTransitModal(){document.getElementById('tr-date').value=new Date().toISOString().split('T')[0];openModal('modal-transit');}
+function addTransitItem(){
+  const n=document.getElementById('tr-name').value.trim();if(!n)return toast('Enter a description');
+  S.transit.push({id:'tr'+Date.now(),bin:document.getElementById('tr-bin').value,name:n,date:document.getElementById('tr-date').value});
+  save();closeModal('modal-transit');renderTransit();document.getElementById('tr-name').value='';toast('Logged');
+}
+function resolveTransit(id){if(confirm('Mark resolved?')){S.transit=S.transit.filter(t=>t.id!==id);save();renderTransit();toast('Resolved');}}
+
+// ═══════════════════════════════════════════════
+// CONTAINERS (reserved for future use)
+// ═══════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════
+// MODALS + TOAST
+// ═══════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.nav)));
+buildSidebar();
+renderDashboard();
+updateStats();
+
+// ═══════════════════════════════════════════════
+// MOBILE SIDEBAR
+// ═══════════════════════════════════════════════
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  const open=sb.classList.toggle('open');
+  ov.classList.toggle('open',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+</script>
+
+<script>
+// Password gate — SHA-256 hash comparison
+const PW_HASH = '3e6236c54a8f66370826eecb997b859f84397e1d891bb324ed7a39c70ae47d96';
+const SESSION_KEY = 'ha_auth';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  const hash = await sha256(val);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('pw-gate').classList.add('hidden');
+  } else {
+    const inp = document.getElementById('pw-input');
+    inp.classList.add('error');
+    document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
+    setTimeout(() => inp.classList.remove('error'), 400);
+    inp.value = '';
+    inp.focus();
+  }
+}
+
+// Check session on load — stays unlocked for the browser session
+(async function() {
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('pw-gate').classList.add('hidden');
+  }
+})();
+</script>
+</body>
+</html>
